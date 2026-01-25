@@ -300,6 +300,35 @@ async function main() {
     return res.json(user);
   });
 
+  // ADMIN: user management
+  app.get(`${API_PREFIX}/users`, authRequired, requireRoles("Admin"), async (_req, res) => {
+    const rows = await dbAll(
+      db,
+      `SELECT userID, name, email, role, userTypes
+       FROM users
+       ORDER BY userID ASC`,
+    );
+    return res.json(rows);
+  });
+
+  app.put(`${API_PREFIX}/users/:id`, authRequired, requireRoles("Admin"), async (req, res) => {
+    const id = toInt(req.params.id);
+    const existing = await dbGet(db, `SELECT userID FROM users WHERE userID = ?`, [id]);
+    if (!existing) return res.status(404).json({ error: "Not found" });
+
+    const { role, userTypes } = req.body || {};
+    const allowedRoles = ["Admin", "Management", "Regular", "Control"];
+    if (!role || !allowedRoles.includes(String(role))) return res.status(400).json({ error: "Invalid role" });
+
+    await dbRun(db, `UPDATE users SET role = ?, userTypes = ? WHERE userID = ?`, [
+      String(role),
+      userTypes !== undefined && userTypes !== null ? String(userTypes) : null,
+      id,
+    ]);
+    await audit(db, req.user.userID, `user:update:${id}:role=${role}:types=${userTypes ?? ""}`);
+    return res.json({ ok: true });
+  });
+
   // COMPANIES
   app.get(`${API_PREFIX}/companies`, async (_req, res) => {
     const rows = await dbAll(db, `SELECT companyID, name, industry, location FROM companies ORDER BY name ASC`);
@@ -754,13 +783,52 @@ async function main() {
     });
   });
 
-  app.get(`${API_PREFIX}/dashboard/timeseries`, authRequired, async (req, res) => {
+  app.get(`${API_PREFIX}/dashboard/status-breakdown`, async (req, res) => {
+    // Guest preview
+    if (!req.user) {
+      return res.json([
+        { status: "Applied", count: 12 },
+        { status: "Interview", count: 5 },
+        { status: "Offer", count: 2 },
+        { status: "Rejected", count: 10 },
+      ]);
+    }
+
     const user = req.user;
     const isGlobal =
       hasRole(user, ["Admin", "Management"]) || (user.role === "Regular" && hasType(user, ["Analyst"]));
 
+    const whereSql = isGlobal ? "" : "WHERE userID = ?";
+    const params = isGlobal ? [] : [user.userID];
+    const rows = await dbAll(
+      db,
+      `SELECT status, COUNT(*) AS count
+       FROM applications
+       ${whereSql}
+       GROUP BY status`,
+      params,
+    );
+    return res.json(rows);
+  });
+
+  app.get(`${API_PREFIX}/dashboard/timeseries`, async (req, res) => {
     const from = req.query.from ? String(req.query.from) : "1970-01-01";
     const to = req.query.to ? String(req.query.to) : "2999-12-31";
+
+    // Guest preview: allow charts without login
+    if (!req.user) {
+      return res.json([
+        { date: "2025-01-01", count: 2 },
+        { date: "2025-01-02", count: 1 },
+        { date: "2025-01-05", count: 3 },
+        { date: "2025-01-12", count: 2 },
+        { date: "2025-01-20", count: 1 },
+      ]);
+    }
+
+    const user = req.user;
+    const isGlobal =
+      hasRole(user, ["Admin", "Management"]) || (user.role === "Regular" && hasType(user, ["Analyst"]));
 
     const where = ["appliedDate >= ?", "appliedDate <= ?"];
     const params = [from, to];
@@ -781,13 +849,35 @@ async function main() {
   });
 
   // STATIC FRONTEND (SPA)
-  const publicDir = path.join(__dirname, "public");
-  app.use(express.static(publicDir));
-  app.get("*", (req, res) => {
-    // Don't swallow API routes
-    if (req.path.startsWith(API_PREFIX)) return res.status(404).json({ error: "Not found" });
-    return res.sendFile(path.join(publicDir, "index.html"));
-  });
+  const clientCandidates = [
+    path.join(__dirname, "..", "client", "dist", "client", "browser"),
+    path.join(__dirname, "..", "client", "dist", "client"),
+  ];
+  const clientDist = clientCandidates.find((p) => fs.existsSync(path.join(p, "index.html")));
+
+  if (clientDist) {
+    app.use(
+      express.static(clientDist, {
+        setHeaders(res, filePath) {
+          // Always revalidate HTML so new hashed assets are picked up.
+          if (filePath.endsWith("index.html")) {
+            res.setHeader("Cache-Control", "no-store");
+          }
+        },
+      }),
+    );
+    app.get("*", (req, res) => {
+      if (req.path.startsWith(API_PREFIX)) return res.status(404).json({ error: "Not found" });
+      return res.sendFile(path.join(clientDist, "index.html"));
+    });
+  } else {
+    const publicDir = path.join(__dirname, "public");
+    app.use(express.static(publicDir));
+    app.get("*", (req, res) => {
+      if (req.path.startsWith(API_PREFIX)) return res.status(404).json({ error: "Not found" });
+      return res.sendFile(path.join(publicDir, "index.html"));
+    });
+  }
 
   app.listen(PORT, () => {
     // eslint-disable-next-line no-console

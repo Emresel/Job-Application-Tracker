@@ -1,6 +1,10 @@
 # Job Application Tracker (Web App)
 
-This workspace contains a **Node.js/Express + SQLite** backend and a **browser-based UI** (served by the backend).
+This workspace contains:
+- **Angular frontend** (`client/`)
+- **Node.js/Express + SQLite backend** (`server/`)
+
+The backend serves the built Angular app in production.
 
 ## Features
 - **Authentication**: JWT-based register/login
@@ -15,18 +19,43 @@ This workspace contains a **Node.js/Express + SQLite** backend and a **browser-b
 - **Audit log** for critical actions
 
 ## Project Structure
-- `server/`: backend + static frontend
+- `client/`: Angular frontend
+- `server/`: backend + API hosting
   - `server/index.js`: API + static hosting
   - `server/schema.sql`: SQLite schema
-  - `server/public/`: UI served in the browser
+  - `server/public/`: fallback page (shown if Angular client is not built)
 
 ## Install & Run
 Prerequisite: Node.js 18+ recommended.
 
+### Option A (recommended): production-like (Angular build served by Express)
+
+```bash
+cd client
+npm.cmd install
+npm.cmd run build
+
+cd ..\server
+npm.cmd install
+npm.cmd run dev
+```
+
+### Option B: development (Angular dev server)
+
+Terminal 1:
+
 ```bash
 cd server
-npm install
-npm run dev
+npm.cmd install
+npm.cmd run dev
+```
+
+Terminal 2:
+
+```bash
+cd client
+npm.cmd install
+npm.cmd start
 ```
 
 UI: `http://localhost:3000`
@@ -73,6 +102,7 @@ Default base: `http://localhost:3000/api/v1`
 ### Dashboard
 - `GET /api/v1/dashboard`
 - `GET /api/v1/dashboard/timeseries?from=2025-01-01&to=2025-01-31`
+- `GET /api/v1/dashboard/status-breakdown`
 
 ## Guest / Read-only Preview (No Login)
 If there is no token, `GET /api/v1/dashboard` returns sample data. Other endpoints require authentication.

@@ -1,0 +1,34 @@
+<div class="app">
+  <header class="topbar">
+    <div class="brand">
+      <div class="logo">JAT</div>
+      <div>
+        <div class="title">Job Application Tracker</div>
+        <div class="subtitle">Angular frontend • Express + SQLite backend</div>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <div class="badge muted">{{ meLabel() }}</div>
+      <button class="btn ghost" *ngIf="auth.isSignedIn()" (click)="signOut()">Sign out</button>
+    </div>
+  </header>
+
+  <div class="layout">
+    <nav class="sidebar">
+      <a routerLink="/dashboard" routerLinkActive="active" class="navlink">Dashboard</a>
+      <a routerLink="/statistics" routerLinkActive="active" class="navlink">Statistics</a>
+      <a routerLink="/applications" routerLinkActive="active" class="navlink">Applications</a>
+      <a routerLink="/companies" routerLinkActive="active" class="navlink">Companies</a>
+      <a routerLink="/categories" routerLinkActive="active" class="navlink">Categories</a>
+      <a routerLink="/reminders" routerLinkActive="active" class="navlink">Reminders</a>
+      <a routerLink="/admin" routerLinkActive="active" class="navlink" *ngIf="auth.isAdmin()">Admin</a>
+      <div class="divider"></div>
+      <a routerLink="/login" routerLinkActive="active" class="navlink">Login</a>
+      <a routerLink="/register" routerLinkActive="active" class="navlink">Register</a>
+    </nav>
+
+    <main class="content">
+      <router-outlet />
+    </main>
+  </div>
+</div>
