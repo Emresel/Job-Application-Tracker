@@ -1,0 +1,22 @@
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Env / secrets
+.env
+server/.env
+
+# SQLite / runtime data
+*.sqlite
+*.sqlite3
+server/data/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+
+# PDFs (keep docs locally, not in repo)
+*.pdf
+
