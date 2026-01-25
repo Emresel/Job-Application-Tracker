@@ -5,6 +5,7 @@ import { ApiService } from "../../core/api.service";
 import { TimeseriesPoint } from "../../core/models";
 
 type ChartMode = "bars" | "heatmap";
+const DASHBOARD_CHARTMODE_KEY = "jat_chartMode_dashboard_timeseries_v2";
 
 @Component({
   selector: "app-dashboard",
@@ -153,7 +154,7 @@ export class DashboardComponent {
   setChartMode(mode: ChartMode) {
     this.chartMode.set(mode);
     try {
-      localStorage.setItem("jat_chartMode_dashboard_timeseries", mode);
+      localStorage.setItem(DASHBOARD_CHARTMODE_KEY, mode);
     } catch {
       // ignore storage errors
     }
@@ -161,7 +162,7 @@ export class DashboardComponent {
 
   private loadChartMode(): ChartMode {
     try {
-      const v = localStorage.getItem("jat_chartMode_dashboard_timeseries");
+      const v = localStorage.getItem(DASHBOARD_CHARTMODE_KEY);
       if (v === "bars" || v === "heatmap") return v;
     } catch {
       // ignore
