@@ -848,8 +848,9 @@ async function main() {
     return res.json(rows);
   });
 
-  // STATIC FRONTEND (SPA)
+  // STATIC FRONTEND (SPA) – Angular: client/dist/... ; Vite/React: client/dist
   const clientCandidates = [
+    path.join(__dirname, "..", "client", "dist"),
     path.join(__dirname, "..", "client", "dist", "client", "browser"),
     path.join(__dirname, "..", "client", "dist", "client"),
   ];

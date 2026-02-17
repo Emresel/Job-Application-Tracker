@@ -1,10 +1,10 @@
 # Job Application Tracker (Web App)
 
 This workspace contains:
-- **Angular frontend** (`client/`)
+- **React (Vite) frontend** (`client/`)
 - **Node.js/Express + SQLite backend** (`server/`)
 
-The backend serves the built Angular app in production.
+The backend serves the built React app in production.
 
 ## Features
 - **Authentication**: JWT-based register/login
@@ -19,46 +19,48 @@ The backend serves the built Angular app in production.
 - **Audit log** for critical actions
 
 ## Project Structure
-- `client/`: Angular frontend
+- `client/`: React (Vite) frontend
 - `server/`: backend + API hosting
   - `server/index.js`: API + static hosting
   - `server/schema.sql`: SQLite schema
-  - `server/public/`: fallback page (shown if Angular client is not built)
+  - `server/public/`: fallback page (shown if React client is not built)
 
 ## Install & Run
 Prerequisite: Node.js 18+ recommended.
 
-### Option A (recommended): production-like (Angular build served by Express)
+### Option A (recommended): production-like (React build served by Express)
 
 ```bash
 cd client
-npm.cmd install
-npm.cmd run build
+npm install
+npm run build
 
-cd ..\server
-npm.cmd install
-npm.cmd run dev
+cd ../server
+npm install
+npm run dev
 ```
 
-### Option B: development (Angular dev server)
+Open **http://localhost:3000**
 
-Terminal 1:
+### Option B: development (React dev server + API proxy)
+
+Terminal 1 (API):
 
 ```bash
 cd server
-npm.cmd install
-npm.cmd run dev
+npm install
+npm run dev
 ```
 
-Terminal 2:
+Terminal 2 (React with proxy to API):
 
 ```bash
 cd client
-npm.cmd install
-npm.cmd start
+npm install
+npm run dev
 ```
 
-UI: `http://localhost:3000`
+Open **http://localhost:5173** (Vite proxies `/api` to the server). To use a different API URL, set `VITE_API_BASE_URL` in `client/.env` (e.g. `http://localhost:3000/api/v1`).
 
 ## Configuration
 Optionally copy `server/.env.example` to `server/.env`.
