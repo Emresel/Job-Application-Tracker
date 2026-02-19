@@ -5,8 +5,12 @@ import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import { AddJobDialog } from "@/components/jobs/AddJobDialog";
+import { useApplications } from "@/hooks/useApplications";
 
 export default function Dashboard() {
+  const { jobs } = useApplications();
+  const interviewCount = jobs.filter((j) => j.status === "Interviewing").length;
+
   return (
     <Layout>
       <div className="flex flex-col gap-8 h-full">
@@ -15,7 +19,7 @@ export default function Dashboard() {
           <div>
             <h1 className="text-3xl font-bold tracking-tight text-foreground">Dashboard</h1>
             <p className="text-muted-foreground mt-1">
-              Welcome back! You have <span className="text-foreground font-medium">3 interviews</span> coming up this week.
+              Welcome back! You have <span className="text-foreground font-medium">{interviewCount} interview{interviewCount !== 1 ? "s" : ""}</span> coming up this week.
             </p>
           </div>
           <Dialog>
