@@ -9,6 +9,7 @@ const morgan = require("morgan");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const sqlite3 = require("sqlite3").verbose();
+const rateLimit = require("express-rate-limit");
 
 const PORT = Number(process.env.PORT || 3000);
 const JWT_SECRET = process.env.JWT_SECRET || "change-me";
@@ -252,8 +253,16 @@ async function main() {
   // Health
   app.get(`${API_PREFIX}/health`, (_req, res) => res.json({ ok: true, time: nowIso() }));
 
+  const authLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    limit: 5, // Limit each IP to 5 requests per `window` (here, per 15 minutes)
+    standardHeaders: 'draft-7', // draft-6: `RateLimit-*` headers; draft-7: combined `RateLimit` header
+    legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+    message: { error: "Too many login/register attempts from this IP, please try again after 15 minutes." }
+  });
+
   // AUTH
-  app.post(`${API_PREFIX}/auth/register`, async (req, res) => {
+  app.post(`${API_PREFIX}/auth/register`, authLimiter, async (req, res) => {
     try {
       const { name, email, password } = req.body || {};
       if (!name || !email || !password) return res.status(400).json({ error: "Missing fields" });
@@ -273,7 +282,7 @@ async function main() {
     }
   });
 
-  app.post(`${API_PREFIX}/auth/login`, async (req, res) => {
+  app.post(`${API_PREFIX}/auth/login`, authLimiter, async (req, res) => {
     try {
       const { email, password } = req.body || {};
       if (!email || !password) return res.status(400).json({ error: "Missing fields" });
@@ -491,10 +500,13 @@ async function main() {
         a.appID, a.userID, a.categoryID, a.companyID, a.company, a.position, a.status,
         a.priority, a.appliedDate, a.deadline, a.notes,
         c.name AS categoryName,
-        co.name AS companyName
+        co.name AS companyName,
+        u.name AS userName,
+        u.email AS userEmail
       FROM applications a
       LEFT JOIN categories c ON c.categoryID = a.categoryID
       LEFT JOIN companies co ON co.companyID = a.companyID
+      LEFT JOIN users u ON u.userID = a.userID
       ${whereSql}
       ORDER BY ${orderBy.join(", ")}
       LIMIT ? OFFSET ?`,

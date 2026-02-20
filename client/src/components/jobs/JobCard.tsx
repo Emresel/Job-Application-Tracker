@@ -148,8 +148,13 @@ export function JobCard({ job }: JobCardProps) {
             <Badge variant="secondary" className="font-normal text-xs bg-muted/50">
               {job.type}
             </Badge>
+            {isAdminOrManagement && job.userName && (
+              <Badge variant="outline" className="font-normal text-[10px] bg-primary/5 text-primary border-primary/20">
+                Owner: {job.userName} {job.userEmail ? `(${job.userEmail})` : ""}
+              </Badge>
+            )}
           </div>
-          
+
           <div className="grid gap-1.5 text-xs text-muted-foreground">
             <div className="flex items-center gap-1.5">
               <MapPin className="h-3.5 w-3.5" />

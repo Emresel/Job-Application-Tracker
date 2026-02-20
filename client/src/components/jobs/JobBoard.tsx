@@ -1,15 +1,27 @@
-import { useState } from "react";
 import { useApplications } from "@/hooks/useApplications";
-import type { JobStatus } from "@/lib/store";
 import { JobCard } from "./JobCard";
-import { motion, AnimatePresence } from "framer-motion";
+import { JobStatus } from "@/lib/store";
+import { AnimatePresence } from "framer-motion";
 import { Plus } from "lucide-react";
+import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
+import { AddJobDialog } from "./AddJobDialog";
+import { useAuth } from "@/contexts/AuthContext";
+
+interface JobBoardProps {
+  global?: boolean;
+}
 
 const COLUMNS: JobStatus[] = ["Applied", "Interviewing", "Offer", "Rejected"];
 
-export function JobBoard() {
-  const { jobs, isLoading, updateJobStatus } = useApplications();
-  const [draggedJobId, setDraggedJobId] = useState<string | null>(null);
+export function JobBoard({ global = false }: JobBoardProps) {
+  const { jobs, isLoading } = useApplications({ global });
+  const { user } = useAuth();
+
+  const canAddStatus = (status: JobStatus) => {
+    if (!user) return false;
+    if (status === "Offer" && user.role !== "Admin" && user.role !== "Management") return false;
+    return true;
+  };
 
   if (isLoading) {
     return (
@@ -23,7 +35,7 @@ export function JobBoard() {
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 h-full overflow-x-auto pb-4">
       {COLUMNS.map((status) => {
         const columnJobs = jobs.filter((job) => job.status === status);
-        
+
         return (
           <div key={status} className="flex flex-col h-full min-w-[280px]">
             <div className="flex items-center justify-between mb-4 px-1">
@@ -35,9 +47,18 @@ export function JobBoard() {
                   {columnJobs.length}
                 </span>
               </div>
-              <button className="text-muted-foreground hover:text-primary transition-colors">
-                <Plus className="h-4 w-4" />
-              </button>
+              {canAddStatus(status) && (
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <button className="text-muted-foreground hover:text-primary transition-colors">
+                      <Plus className="h-4 w-4" />
+                    </button>
+                  </DialogTrigger>
+                  <DialogContent className="sm:max-w-[425px]">
+                    <AddJobDialog defaultStatus={status} />
+                  </DialogContent>
+                </Dialog>
+              )}
             </div>
 
             <div className="flex-1 bg-muted/30 rounded-xl border border-dashed border-border/60 p-3">

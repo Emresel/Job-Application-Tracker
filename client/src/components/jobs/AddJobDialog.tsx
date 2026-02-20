@@ -27,6 +27,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
 import { CalendarIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { JobStatus } from "@/lib/store";
 
 const formSchema = z.object({
   company: z.string().min(2, {
@@ -45,7 +46,7 @@ const formSchema = z.object({
   salaryRange: z.string().optional(),
 });
 
-export function AddJobDialog() {
+export function AddJobDialog({ defaultStatus = "Applied" }: { defaultStatus?: JobStatus } = {}) {
   const { addJob, addPending } = useApplications();
   const { toast } = useToast();
   const { user } = useAuth();
@@ -58,7 +59,7 @@ export function AddJobDialog() {
       position: "",
       location: "",
       type: "Remote",
-      status: "Applied",
+      status: defaultStatus,
       appliedDate: new Date(),
       deadline: undefined,
       salaryRange: "",
@@ -244,7 +245,7 @@ export function AddJobDialog() {
             />
           </div>
           <div className="grid grid-cols-2 gap-4">
-             <FormField
+            <FormField
               control={form.control}
               name="status"
               render={({ field }) => (
@@ -267,7 +268,7 @@ export function AddJobDialog() {
                 </FormItem>
               )}
             />
-             <FormField
+            <FormField
               control={form.control}
               name="salaryRange"
               render={({ field }) => (

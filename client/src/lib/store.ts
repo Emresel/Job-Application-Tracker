@@ -14,6 +14,8 @@ export interface JobApplication {
   salaryRange?: string;
   notes?: string;
   logo?: string;
+  userName?: string;
+  userEmail?: string;
 }
 
 interface JobStore {
@@ -69,7 +71,7 @@ export const useJobStore = create<JobStore>((set) => ({
       salaryRange: "$180k - $220k",
       logo: "https://images.unsplash.com/photo-1611162617474-5b21e879e113?w=128&h=128&fit=crop&auto=format"
     },
-     {
+    {
       id: "5",
       company: "Stark Industries",
       position: "Chief Engineer",

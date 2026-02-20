@@ -2,15 +2,18 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Briefcase, Send, CheckCircle2, XCircle } from "lucide-react";
 import { useApplications } from "@/hooks/useApplications";
 
-export function StatsOverview() {
-  const { jobs } = useApplications();
+export interface StatsOverviewProps {
+  global?: boolean;
+}
+
+export function StatsOverview({ global = false }: StatsOverviewProps) {
+  const { jobs } = useApplications({ global });
 
   const stats = [
     {
       label: "Total Applications",
       value: jobs.filter((j) => j.status !== "Offer").length,
       icon: Briefcase,
-      trend: "+2 this week",
       color: "text-primary",
       bg: "bg-primary/10",
     },
@@ -18,7 +21,6 @@ export function StatsOverview() {
       label: "Interviews",
       value: jobs.filter((j) => j.status === "Interviewing").length,
       icon: Send,
-      trend: "",
       color: "text-chart-3", // Orange
       bg: "bg-chart-3/10",
     },
@@ -26,7 +28,6 @@ export function StatsOverview() {
       label: "Offers",
       value: jobs.filter((j) => j.status === "Offer").length,
       icon: CheckCircle2,
-      trend: "",
       color: "text-chart-2", // Green
       bg: "bg-chart-2/10",
     },
@@ -34,7 +35,6 @@ export function StatsOverview() {
       label: "Rejected",
       value: jobs.filter((j) => j.status === "Rejected").length,
       icon: XCircle,
-      trend: "12% rate",
       color: "text-muted-foreground",
       bg: "bg-muted",
     },
@@ -56,9 +56,6 @@ export function StatsOverview() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold tracking-tight">{stat.value}</div>
-              <p className="text-xs text-muted-foreground mt-1 font-medium">
-                {stat.trend}
-              </p>
             </CardContent>
           </Card>
         );

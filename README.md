@@ -15,6 +15,8 @@ The backend serves the built React app in production.
 - **Application History**: status change log
 - **Reminders**: user-scoped CRUD
 - **Dashboard/Analytics**: summary metrics + daily time series
+- **Enhanced Admin Panel**: managers/admins can view user ownership of applications
+- **Security**: Brute-force protection on authentication routes (express-rate-limit)
 - **CSV export**
 - **Audit log** for critical actions
 
