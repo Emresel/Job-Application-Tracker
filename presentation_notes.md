@@ -1,29 +1,29 @@
-# Job Application Tracker - Dönem Projesi Sunum Notları
+# Job Application Tracker - Term Project Presentation Notes
 
-Bu döküman, projenizi hocanıza Teams üzerinden sunarken kullanabileceğiniz teknik detayları ve önemli noktaları içermektedir. Hocaların en çok dikkat ettiği **Veritabanı Tasarımı**, **Güvenlik** ve **Mimari** başlıkları öne çıkarılmıştır.
+This document contains technical details and key points you can use while presenting your project to your professor via Teams. The topics professors focus on the most—**Database Design**, **Security**, and **Architecture**—are highlighted.
 
-## 1. Veritabanı ve Mimari (İlk Sorulacak Kısım)
-Sunuma başlarken `server/schema.sql` dosyasını açıp üzerinden geçmeniz çok etkili olacaktır. Dosya içerisine akademik standartlara uygun yorum satırları eklenmiştir.
+## 1. Database and Architecture (Likely the First Question)
+Starting the presentation by opening the `server/schema.sql` file and going over it will be very effective. Academic-level comments have been added inside the file.
 
-* **Relational Database (İlişkisel Veritabanı):** Projede SQLite kullanılmıştır (Hafif ve sunucu gerektirmediği için tercih edildi).
-* **3NF (3rd Normal Form) Standardı:** Veri tekrarını önlemek için tablolar normalize edilmiştir. Örneğin `companies` (Şirketler) bilgisi, `applications` (Başvurular) tablosunda tekrar tekrar yazılmak yerine ayrı bir tabloya (`companyID` ile) alınarak 1:N ilişkisi kurulmuştur.
-* **Foreign Key Constraints (Yabancı Anahtar Kısıtlamaları):** `PRAGMA foreign_keys = ON;` ile aktif edilmiştir. 
-  * Örneğin bir başvuru (`applications`), mutlak bir kullanıcıya (`userID`) bağlıdır. 
-  * Ayrıca silinme veya güncellenme durumlarındaki yetim(orphan) kayıtları önlemek için ilişkiler katı tutulmuştur.
-* **Audit_Log (Denetim Kayıtları):** Sisteme güvenlik ve izlenebilirlik katmak için `audit_log` tablosu tasarlanmıştır. Yalnızca *Admin* rolü bu tabloyu okuyarak kimin ne zaman giriş yaptığını takip edebilir.
+* **Relational Database:** SQLite is used in the project (chosen because it is lightweight and does not require a separate server process).
+* **3NF (3rd Normal Form) Standard:** Tables are normalized to prevent data redundancy. For example, `companies` information is extracted into a separate table instead of being repeatedly written in the `applications` table, establishing a 1:N relationship via `companyID`.
+* **Foreign Key Constraints:** Enabled using `PRAGMA foreign_keys = ON;`. 
+  * For instance, an application (`applications`) is strictly tied to a user (`userID`). 
+  * Relationships are strictly enforced to prevent orphan records during deletions or updates.
+* **Audit_Log:** An `audit_log` table was designed to add security and traceability to the system. Only the *Admin* role can read this table to track who logged in or performed critical actions.
 
-## 2. Güvenlik Önlemleri (Hocaların Beğeneceği Detaylar)
-* **SQL Injection Koruması:** `server/index.js` içindeki tüm veritabanı sorguları *Parameterized Queries* (Parametrik Sorgular) ile yapılmıştır. Kullanıcıdan alınan veriler asla string birleştirme (concatenation) ile SQL içine yazılmaz, bu sayede SQL Injection saldırıları tamamen engellenmiştir.
-* **Şifreleme (Bcrypt):** `users` tablosunda `password` yerine `passwordHash` tutulmaktadır. Kullanıcı şifreleri veritabanına kaydedilirken `bcryptjs` kütüphanesi kullanılarak geri döndürülemez şekilde şifrelenir (Salting + Hashing).
-* **JWT (JSON Web Tokens) ile Authentication:** Kullanıcı giriş yaptığında (stateless) bir JWT token üretilir. Her API isteğinde (örn: başvuru listesini çekerken) sunucu bu token'ı doğrular (Authorization).
-* **Brute-Force Koruması (Rate Limiting):** Login ve Register uç noktalarına (endpoint) `express-rate-limit` eklenmiştir. "15 dakika içinde 5 hatalı deneme" yapan bir IP adresi geçici olarak kilitlenir. Kaba kuvvet saldırıları (brute-force) engellenmiştir.
-* **Role-Based Access Control (RBAC):** Admin, Management ve Regular User gibi roller tanımlanmıştır. API seviyesinde `requireRoles("Admin")` gibi middleware (ara yazılım) kontrolleri mevcuttur.
+## 2. Security Measures (Details Professors Will Appreciate)
+* **SQL Injection Protection:** All database queries in `server/index.js` use *Parameterized Queries*. User inputs are never appended into SQL strings via concatenation, thus completely preventing SQL Injection attacks.
+* **Encryption (Bcrypt):** The `users` table stores `passwordHash` instead of plain `password`. User passwords are irreversibly encrypted using the `bcryptjs` library (Salting + Hashing) before saving to the database.
+* **Authentication with JWT (JSON Web Tokens):** When a user logs in (stateless approach), a JWT token is generated. On every API request (e.g., fetching the application list), the server verifies this token (Authorization).
+* **Brute-Force Protection (Rate Limiting):** `express-rate-limit` is added to the Login and Register endpoints. Any IP address making "5 failed attempts within 15 minutes" is temporarily locked out, effectively preventing brute-force attacks.
+* **Role-Based Access Control (RBAC):** Roles such as Admin, Management, and Regular User are defined. Middleware checks like `requireRoles("Admin")` enforce access control at the API level.
 
-## 3. Frontend ve Teknolojiler
-* **React (Vite) & TypeScript:** Modern, bileşen (component) tabanlı bir UI mimarisi kullanılmıştır. Durum yönetimi (State Management) için `Zustand` ve API istekleri için `React Query` tercih edilmiştir.
-* **Tailwind CSS & Shadcn UI:** Temiz, duyarlı (responsive) tasarım ve hazır modüler UI bileşenleri entegre edilmiştir.
+## 3. Frontend and Technologies
+* **React (Vite) & TypeScript:** A modern, component-based UI architecture is used. `Zustand` is preferred for State Management, and `React Query` for handling API requests.
+* **Tailwind CSS & Shadcn UI:** Integrated for a clean, responsive design and ready-to-use modular UI components.
 
-> **Tavsiye Edilen Sunum Akışı:**
-> 1. Ekran paylaşımında önce projeyi tarayıcıda çalışır halde gösterin (Login, Dashoard, Yeni başvuru ekleme, Audit Log).
-> 2. Ardından kod editörüne (VSCode) geçin ve *en çok önemsenen yer* olan `server/schema.sql` dosyasını açıp ilişkileri açıklayın.
-> 3. `server/index.js` dosyasındaki `/api/v1/auth/login` kısmını gösterip şifrelerin nasıl doğrulandığını ve Brute-Force korumasını açıklayarak teknik bilginizi kanıtlayın.
+> **Recommended Presentation Flow:**
+> 1. In screen sharing, first demonstrate the running project in the browser (Login, Dashboard, Adding a new application, Audit Log).
+> 2. Then, switch to the code editor (VSCode) and open the most critical file, `server/schema.sql`, to explain the relationships.
+> 3. Show the `/api/v1/auth/login` section in `server/index.js` to explain how passwords are verified and mention the Brute-Force protection to prove your technical knowledge.
