@@ -26,7 +26,8 @@ CREATE TABLE IF NOT EXISTS users (
   email TEXT UNIQUE NOT NULL,
   passwordHash TEXT NOT NULL, -- Stored securely using bcrypt algorithm
   role TEXT NOT NULL,         -- Role-Based Access Control: Admin | Management | Regular | Control
-  userTypes TEXT              -- Categorization: JobSeeker, Analyst etc.
+  userTypes TEXT,             -- Categorization: JobSeeker, Analyst etc.
+  nickname TEXT               -- Custom recognizable name
 );
 
 -- ---------------------------------------------------------------------------------

@@ -100,21 +100,21 @@ async function initDb(db) {
 
     const admin = await dbRun(
       db,
-      `INSERT INTO users (name, username, email, passwordHash, role, userTypes)
-       VALUES (?, ?, ?, ?, ?, ?)`,
-      ["Admin", "admin", "admin@example.com", adminPass, "Admin", null],
+      `INSERT INTO users (name, username, email, passwordHash, role, userTypes, nickname)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      ["Admin", "admin", "admin@example.com", adminPass, "Admin", null, null],
     );
     await dbRun(
       db,
-      `INSERT INTO users (name, username, email, passwordHash, role, userTypes)
-       VALUES (?, ?, ?, ?, ?, ?)`,
-      ["Management", "manager", "manager@example.com", mgmtPass, "Management", null],
+      `INSERT INTO users (name, username, email, passwordHash, role, userTypes, nickname)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      ["Management", "manager", "manager@example.com", mgmtPass, "Management", null, null],
     );
     await dbRun(
       db,
-      `INSERT INTO users (name, username, email, passwordHash, role, userTypes)
-       VALUES (?, ?, ?, ?, ?, ?)`,
-      ["Regular User", "user", "user@example.com", userPass, "Regular", "JobSeeker"],
+      `INSERT INTO users (name, username, email, passwordHash, role, userTypes, nickname)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      ["Regular User", "user", "user@example.com", userPass, "Regular", "JobSeeker", null],
     );
 
     // Companies
@@ -170,6 +170,7 @@ function signToken(user) {
       userTypes: user.userTypes || null,
       email: user.email,
       name: user.name,
+      nickname: user.nickname || null,
     },
     JWT_SECRET,
     { expiresIn: "7d" },
@@ -271,9 +272,9 @@ async function main() {
       const passwordHash = await bcrypt.hash(String(password), 10);
       const r = await dbRun(
         db,
-        `INSERT INTO users (name, username, email, passwordHash, role, userTypes)
-         VALUES (?, ?, ?, ?, ?, ?)`,
-        [String(name), null, String(email), passwordHash, "Regular", "JobSeeker"],
+        `INSERT INTO users (name, username, email, passwordHash, role, userTypes, nickname)
+         VALUES (?, ?, ?, ?, ?, ?, ?)`,
+        [String(name), null, String(email), passwordHash, "Regular", "JobSeeker", null],
       );
       await audit(db, r.lastID, `register:${email}`);
       return res.status(201).json({ userID: r.lastID });
@@ -302,18 +303,29 @@ async function main() {
   app.get(`${API_PREFIX}/users/me`, authRequired, async (req, res) => {
     const user = await dbGet(
       db,
-      `SELECT userID, name, email, role, userTypes FROM users WHERE userID = ?`,
+      `SELECT userID, name, email, role, userTypes, nickname FROM users WHERE userID = ?`,
       [req.user.userID],
     );
     if (!user) return res.status(404).json({ error: "Not found" });
     return res.json(user);
   });
 
+  app.put(`${API_PREFIX}/users/me`, authRequired, async (req, res) => {
+    const { nickname } = req.body || {};
+    await dbRun(
+      db,
+      `UPDATE users SET nickname = ? WHERE userID = ?`,
+      [nickname ? String(nickname) : null, req.user.userID],
+    );
+    await audit(db, req.user.userID, `user:update_profile`);
+    return res.json({ ok: true });
+  });
+
   // ADMIN: user management
   app.get(`${API_PREFIX}/users`, authRequired, requireRoles("Admin"), async (_req, res) => {
     const rows = await dbAll(
       db,
-      `SELECT userID, name, email, role, userTypes
+      `SELECT userID, name, email, role, userTypes, nickname
        FROM users
        ORDER BY userID ASC`,
     );
@@ -336,6 +348,19 @@ async function main() {
     ]);
     await audit(db, req.user.userID, `user:update:${id}:role=${role}:types=${userTypes ?? ""}`);
     return res.json({ ok: true });
+  });
+
+  // ADMIN: Audit Log
+  app.get(`${API_PREFIX}/audit`, authRequired, requireRoles("Admin"), async (_req, res) => {
+    const rows = await dbAll(
+      db,
+      `SELECT a.logID, a.action, a.timestamp, u.name as userName, u.email as userEmail
+       FROM audit_log a
+       LEFT JOIN users u ON u.userID = a.userID
+       ORDER BY a.timestamp DESC
+       LIMIT 500`
+    );
+    return res.json(rows);
   });
 
   // COMPANIES
@@ -501,7 +526,7 @@ async function main() {
         a.priority, a.appliedDate, a.deadline, a.notes,
         c.name AS categoryName,
         co.name AS companyName,
-        u.name AS userName,
+        COALESCE(u.nickname, u.name) AS userName,
         u.email AS userEmail
       FROM applications a
       LEFT JOIN categories c ON c.categoryID = a.categoryID
@@ -885,6 +910,7 @@ async function main() {
     );
     app.get("*", (req, res) => {
       if (req.path.startsWith(API_PREFIX)) return res.status(404).json({ error: "Not found" });
+      res.setHeader("Cache-Control", "no-store");
       return res.sendFile(path.join(clientDist, "index.html"));
     });
   } else {

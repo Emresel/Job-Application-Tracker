@@ -3,17 +3,28 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
-import { User, Bell, Moon, Shield } from "lucide-react";
+import { User, Bell, Moon } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useEffect, useState } from "react";
+import { useAuth } from "@/contexts/AuthContext";
+import { Input } from "@/components/ui/input";
+import { useToast } from "@/hooks/use-toast";
 
 export default function Settings() {
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
+  const { user, updateProfile } = useAuth();
+  const { toast } = useToast();
+
+  const [nickname, setNickname] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     setMounted(true);
-  }, []);
+    if (user?.nickname) {
+      setNickname(user.nickname);
+    }
+  }, [user]);
 
   return (
     <Layout>
@@ -37,7 +48,20 @@ export default function Settings() {
               </div>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="flex items-center justify-between">
+              <div className="space-y-2">
+                <Label htmlFor="nickname">Nickname</Label>
+                <Input
+                  id="nickname"
+                  placeholder="How you want to appear on applications"
+                  value={nickname}
+                  onChange={(e) => setNickname(e.target.value)}
+                />
+                <p className="text-sm text-muted-foreground">
+                  This will be displayed instead of your real name on applications.
+                </p>
+              </div>
+
+              <div className="flex items-center justify-between pt-4 border-t">
                 <div className="space-y-0.5">
                   <Label>Public Profile</Label>
                   <p className="text-sm text-muted-foreground">Make your job search status visible to recruiters.</p>
@@ -98,9 +122,30 @@ export default function Settings() {
               </div>
             </CardContent>
           </Card>
-          
-           <div className="flex justify-end">
-            <Button>Save Changes</Button>
+
+          <div className="flex justify-end">
+            <Button
+              disabled={isSaving}
+              onClick={async () => {
+                setIsSaving(true);
+                try {
+                  if (updateProfile) {
+                    await updateProfile(nickname);
+                    toast({ title: "Profile updated successfully" });
+                  }
+                } catch (e: any) {
+                  toast({
+                    title: "Failed to update profile",
+                    description: e.message,
+                    variant: "destructive",
+                  });
+                } finally {
+                  setIsSaving(false);
+                }
+              }}
+            >
+              {isSaving ? "Saving..." : "Save Changes"}
+            </Button>
           </div>
         </div>
       </div>

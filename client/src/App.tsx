@@ -10,6 +10,7 @@ import Dashboard from "@/pages/Dashboard";
 import Applications from "@/pages/Applications";
 import Calendar from "@/pages/Calendar";
 import Settings from "@/pages/Settings";
+import AuditLog from "@/pages/AuditLog";
 import Login from "@/pages/Login";
 import Register from "@/pages/Register";
 
@@ -26,7 +27,8 @@ function ProtectedRoute({ component: Component }: { component: () => JSX.Element
       </div>
     );
   }
-  if (!token && !PUBLIC_PATHS.includes(location)) {
+  const isGuest = sessionStorage.getItem("guestMode") === "true";
+  if (!token && !isGuest && !PUBLIC_PATHS.includes(location)) {
     return <Redirect to="/login" />;
   }
   return <Component />;
@@ -48,6 +50,9 @@ function Router() {
       </Route>
       <Route path="/settings">
         <ProtectedRoute component={Settings} />
+      </Route>
+      <Route path="/audit">
+        <ProtectedRoute component={AuditLog} />
       </Route>
       <Route component={NotFound} />
     </Switch>

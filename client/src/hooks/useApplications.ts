@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiGet, apiPost, apiPut, apiDelete } from "@/lib/api";
 import type { JobApplication, JobStatus } from "@/lib/store";
+import { useAuth } from "@/contexts/AuthContext";
 
 // Backend application row
 export interface BackendApp {
@@ -17,6 +18,8 @@ export interface BackendApp {
   notes: string | null;
   categoryName?: string | null;
   companyName?: string | null;
+  userName?: string | null;
+  userEmail?: string | null;
 }
 
 export interface ApplicationsResponse {
@@ -62,19 +65,32 @@ function mapBackendToJob(b: BackendApp): JobApplication {
     deadline: b.deadline ?? undefined,
     notes: b.notes ?? undefined,
     logo: undefined,
+    userName: b.userName ?? undefined,
   };
 }
 
 const APPLICATIONS_QUERY_KEY = ["applications"] as const;
 
-export function useApplications() {
+export function useApplications(options: { global?: boolean } = {}) {
   const queryClient = useQueryClient();
+  const { global = false } = options;
+
+  const { user } = useAuth();
+  const isAdminOrManagement = user?.role === "Admin" || user?.role === "Management";
 
   const { data, isLoading, error, refetch } = useQuery({
-    queryKey: APPLICATIONS_QUERY_KEY,
+    queryKey: [...APPLICATIONS_QUERY_KEY, global],
     queryFn: async (): Promise<JobApplication[]> => {
+      const queryParams = new URLSearchParams({
+        page: "1",
+        pageSize: "500",
+        sort: "-appliedDate",
+      });
+      if (isAdminOrManagement && global) {
+        queryParams.append("global", "true");
+      }
       const res = await apiGet<ApplicationsResponse>(
-        "/applications?page=1&pageSize=500&sort=-appliedDate"
+        `/applications?${queryParams.toString()}`
       );
       return (res?.items ?? []).map(mapBackendToJob);
     },

@@ -7,8 +7,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { getToken, setToken as saveToken, clearToken, getBaseUrl } from "@/lib/api";
-import { apiGet } from "@/lib/api";
+import { getToken, setToken as saveToken, clearToken, apiGet, apiPost, apiPut } from "@/lib/api";
 
 export interface User {
   userID: number;
@@ -16,6 +15,7 @@ export interface User {
   email: string;
   role: string;
   userTypes: string | null;
+  nickname: string | null;
 }
 
 interface AuthContextValue {
@@ -26,6 +26,7 @@ interface AuthContextValue {
   register: (name: string, email: string, password: string) => Promise<void>;
   logout: () => void;
   setToken: (token: string) => void;
+  updateProfile: (nickname: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -90,30 +91,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     loadUser();
   }, [loadUser]);
 
+  const updateProfile = useCallback(
+    async (nickname: string) => {
+      await apiPut("/users/me", { nickname });
+      await loadUser(); // refresh user data
+    },
+    [loadUser]
+  );
+
   const value = useMemo(
-    () => ({ user, token, isLoading, login, register, logout, setToken }),
-    [user, token, isLoading, login, register, logout, setToken]
+    () => ({ user, token, isLoading, login, register, logout, setToken, updateProfile }),
+    [user, token, isLoading, login, register, logout, setToken, updateProfile]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
-}
-
-async function apiPost<T>(path: string, body: object): Promise<T> {
-  const base = getBaseUrl();
-  const token = getToken();
-  const res = await fetch(`${base}${path}`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    },
-    body: JSON.stringify(body),
-  });
-  if (!res.ok) {
-    const text = await res.text();
-    throw new Error(text || res.statusText);
-  }
-  return res.json();
 }
 
 export function useAuth() {
