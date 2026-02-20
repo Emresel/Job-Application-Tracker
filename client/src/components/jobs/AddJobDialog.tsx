@@ -20,7 +20,13 @@ import {
 } from "@/components/ui/select";
 import { useApplications } from "@/hooks/useApplications";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
 import { DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { format } from "date-fns";
+import { CalendarIcon } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 const formSchema = z.object({
   company: z.string().min(2, {
@@ -32,12 +38,18 @@ const formSchema = z.object({
   location: z.string().min(2, "Location is required"),
   type: z.enum(["Remote", "On-site", "Hybrid"]),
   status: z.enum(["Applied", "Interviewing", "Offer", "Rejected"]),
+  appliedDate: z.date({
+    required_error: "Applied date is required",
+  }),
+  deadline: z.date().optional(),
   salaryRange: z.string().optional(),
 });
 
 export function AddJobDialog() {
   const { addJob, addPending } = useApplications();
   const { toast } = useToast();
+  const { user } = useAuth();
+  const isAdminOrManagement = user?.role === "Admin" || user?.role === "Management";
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -47,13 +59,16 @@ export function AddJobDialog() {
       location: "",
       type: "Remote",
       status: "Applied",
+      appliedDate: new Date(),
+      deadline: undefined,
       salaryRange: "",
     },
   });
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     try {
-      const appliedDate = new Date().toISOString().slice(0, 10);
+      const appliedDate = values.appliedDate.toISOString().slice(0, 10);
+      const deadline = values.deadline ? values.deadline.toISOString().slice(0, 10) : undefined;
       const notes = [values.location, values.type, values.salaryRange]
         .filter(Boolean)
         .join(" | ");
@@ -64,6 +79,7 @@ export function AddJobDialog() {
         type: values.type,
         status: values.status,
         appliedDate,
+        deadline,
         salaryRange: values.salaryRange,
         notes: notes || undefined,
       });
@@ -156,6 +172,78 @@ export function AddJobDialog() {
             />
           </div>
           <div className="grid grid-cols-2 gap-4">
+            <FormField
+              control={form.control}
+              name="appliedDate"
+              render={({ field }) => (
+                <FormItem className="flex flex-col">
+                  <FormLabel>Applied Date</FormLabel>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <FormControl>
+                        <Button
+                          variant="outline"
+                          className={cn(
+                            "w-full pl-3 text-left font-normal",
+                            !field.value && "text-muted-foreground"
+                          )}
+                        >
+                          {field.value ? format(field.value, "PPP") : <span>Pick a date</span>}
+                          <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                        </Button>
+                      </FormControl>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={field.value}
+                        onSelect={field.onChange}
+                        disabled={(date) => date > new Date() || date < new Date("1900-01-01")}
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="deadline"
+              render={({ field }) => (
+                <FormItem className="flex flex-col">
+                  <FormLabel>Deadline (Optional)</FormLabel>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <FormControl>
+                        <Button
+                          variant="outline"
+                          className={cn(
+                            "w-full pl-3 text-left font-normal",
+                            !field.value && "text-muted-foreground"
+                          )}
+                        >
+                          {field.value ? format(field.value, "PPP") : <span>Pick a date</span>}
+                          <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                        </Button>
+                      </FormControl>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={field.value}
+                        onSelect={field.onChange}
+                        disabled={(date) => date < new Date("1900-01-01")}
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+          <div className="grid grid-cols-2 gap-4">
              <FormField
               control={form.control}
               name="status"
@@ -171,7 +259,7 @@ export function AddJobDialog() {
                     <SelectContent>
                       <SelectItem value="Applied">Applied</SelectItem>
                       <SelectItem value="Interviewing">Interviewing</SelectItem>
-                      <SelectItem value="Offer">Offer</SelectItem>
+                      {isAdminOrManagement && <SelectItem value="Offer">Offer</SelectItem>}
                       <SelectItem value="Rejected">Rejected</SelectItem>
                     </SelectContent>
                   </Select>

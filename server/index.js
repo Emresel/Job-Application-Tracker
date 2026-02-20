@@ -514,6 +514,10 @@ async function main() {
     if ((!companyID && !company) || !position || !status || !appliedDate) {
       return res.status(400).json({ error: "Missing fields" });
     }
+    // Regular users cannot create applications with "Offer" status
+    if (status === "Offer" && !hasRole(req.user, ["Admin", "Management"])) {
+      return res.status(403).json({ error: "Regular users cannot create applications with Offer status" });
+    }
 
     let resolvedCompanyID = companyID ? toInt(companyID) : null;
     let resolvedCompanyName = company ? String(company) : null;

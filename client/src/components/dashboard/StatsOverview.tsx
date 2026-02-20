@@ -8,7 +8,7 @@ export function StatsOverview() {
   const stats = [
     {
       label: "Total Applications",
-      value: jobs.length,
+      value: jobs.filter((j) => j.status !== "Offer").length,
       icon: Briefcase,
       trend: "+2 this week",
       color: "text-primary",
@@ -18,7 +18,7 @@ export function StatsOverview() {
       label: "Interviews",
       value: jobs.filter((j) => j.status === "Interviewing").length,
       icon: Send,
-      trend: "3 upcoming",
+      trend: "",
       color: "text-chart-3", // Orange
       bg: "bg-chart-3/10",
     },
@@ -26,7 +26,7 @@ export function StatsOverview() {
       label: "Offers",
       value: jobs.filter((j) => j.status === "Offer").length,
       icon: CheckCircle2,
-      trend: "1 pending",
+      trend: "",
       color: "text-chart-2", // Green
       bg: "bg-chart-2/10",
     },

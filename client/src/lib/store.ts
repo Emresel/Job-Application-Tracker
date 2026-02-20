@@ -10,6 +10,7 @@ export interface JobApplication {
   type: "Remote" | "On-site" | "Hybrid";
   status: JobStatus;
   appliedDate: string;
+  deadline?: string;
   salaryRange?: string;
   notes?: string;
   logo?: string;

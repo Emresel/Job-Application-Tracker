@@ -4,8 +4,17 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { User, Bell, Moon, Shield } from "lucide-react";
+import { useTheme } from "next-themes";
+import { useEffect, useState } from "react";
 
 export default function Settings() {
+  const { theme, setTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   return (
     <Layout>
       <div className="max-w-4xl mx-auto space-y-8">
@@ -82,7 +91,10 @@ export default function Settings() {
                   <Label>Dark Mode</Label>
                   <p className="text-sm text-muted-foreground">Toggle dark mode for the application.</p>
                 </div>
-                <Switch />
+                <Switch
+                  checked={mounted && theme === "dark"}
+                  onCheckedChange={(checked) => setTheme(checked ? "dark" : "light")}
+                />
               </div>
             </CardContent>
           </Card>

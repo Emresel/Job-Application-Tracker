@@ -59,6 +59,7 @@ function mapBackendToJob(b: BackendApp): JobApplication {
     type: "Remote",
     status: backendStatusToFrontend(b.status),
     appliedDate: b.appliedDate,
+    deadline: b.deadline ?? undefined,
     notes: b.notes ?? undefined,
     logo: undefined,
   };
@@ -86,6 +87,7 @@ export function useApplications() {
         position: job.position,
         status: frontendStatusToBackend(job.status),
         appliedDate: job.appliedDate,
+        deadline: job.deadline || null,
         notes: job.notes ?? null,
       });
       return res;
